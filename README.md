@@ -1,0 +1,1 @@
+# pact-workshop-go-consumer
