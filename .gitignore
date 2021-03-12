@@ -16,5 +16,5 @@
 
 .idea
 log
-pact
+/pact
 pacts
