@@ -2,8 +2,8 @@ SHELL = "/bin/bash"
 
 export PATH := $(PWD)/pact/bin:$(PATH)
 export PATH
-export PROVIDER_NAME = GoUserService
-export CONSUMER_NAME = GoAdminService
+export PROVIDER_NAME = DineInProvider
+export CONSUMER_NAME = DineInConsumer
 export PACT_DIR = $(PWD)/pacts
 export LOG_DIR = $(PWD)/log
 export PACT_BROKER_USERNAME = dXfltyFMgNOFZAxr8io9wJ37iUpY42M

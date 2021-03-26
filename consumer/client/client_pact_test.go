@@ -9,23 +9,27 @@ import (
 
 	"net/url"
 
-	"github.com/pact-foundation/pact-go/dsl"
 	"github.com/haibin/pact-workshop-go-consumer/model"
+	"github.com/pact-foundation/pact-go/dsl"
 )
 
-var commonHeaders = dsl.MapMatcher{
-	"Content-Type":         term("application/json; charset=utf-8", `application\/json`),
-	"X-Api-Correlation-Id": dsl.Like("100"),
-}
-
-var u *url.URL
-var client *Client
+var pact dsl.Pact
 
 func TestMain(m *testing.M) {
 	var exitCode int
 
 	// Setup Pact and related test stuff
-	setup()
+	pact = dsl.Pact{
+		Consumer: os.Getenv("CONSUMER_NAME"),
+		Provider: os.Getenv("PROVIDER_NAME"),
+		LogDir:   os.Getenv("LOG_DIR"),
+		PactDir:  os.Getenv("PACT_DIR"),
+		LogLevel: "INFO",
+	}
+	defer pact.Teardown()
+
+	// Proactively start service to get access to the port
+	pact.Setup(true)
 
 	// Run all the tests
 	exitCode = m.Run()
@@ -36,7 +40,6 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	pact.Teardown()
 	os.Exit(exitCode)
 }
 
@@ -48,17 +51,25 @@ func TestClientPact_GetUser(t *testing.T) {
 			AddInteraction().
 			Given("User sally exists").
 			UponReceiving("A request to login with user 'sally'").
-			WithRequest(request{
+			WithRequest(dsl.Request{
 				Method: "GET",
-				Path:   term("/users/10", "/users/[0-9]+"),
+				Path:   dsl.Term("/user/10", "/user/[0-9]+"),
 			}).
 			WillRespondWith(dsl.Response{
-				Status:  200,
-				Body:    dsl.Match(model.User{}),
-				Headers: commonHeaders,
+				Status: 200,
+				Headers: dsl.MapMatcher{
+					"Content-Type":         dsl.Term("application/json; charset=utf-8", `application\/json`),
+					"X-Api-Correlation-Id": dsl.Like("100"),
+				},
+				Body: dsl.Match(model.User{}),
 			})
 
-		err := pact.Verify(func() error {
+		test := func() error {
+			u, _ := url.Parse(fmt.Sprintf("http://localhost:%d", pact.Server.Port))
+			client := &Client{
+				BaseURL: u,
+			}
+
 			user, err := client.GetUser(id)
 
 			// Assert basic fact
@@ -67,42 +78,10 @@ func TestClientPact_GetUser(t *testing.T) {
 			}
 
 			return err
-		})
+		}
 
-		if err != nil {
+		if err := pact.Verify(test); err != nil {
 			t.Fatalf("Error on Verify: %v", err)
 		}
 	})
-}
-
-// Common test data
-var pact dsl.Pact
-
-// Aliases
-var term = dsl.Term
-
-type request = dsl.Request
-
-func setup() {
-	pact = createPact()
-
-	// Proactively start service to get access to the port
-	pact.Setup(true)
-
-	u, _ = url.Parse(fmt.Sprintf("http://localhost:%d", pact.Server.Port))
-
-	client = &Client{
-		BaseURL: u,
-	}
-
-}
-
-func createPact() dsl.Pact {
-	return dsl.Pact{
-		Consumer: os.Getenv("CONSUMER_NAME"),
-		Provider: os.Getenv("PROVIDER_NAME"),
-		LogDir:   os.Getenv("LOG_DIR"),
-		PactDir:  os.Getenv("PACT_DIR"),
-		LogLevel: "INFO",
-	}
 }

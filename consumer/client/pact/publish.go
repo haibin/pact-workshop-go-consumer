@@ -11,19 +11,16 @@ import (
 )
 
 func main() {
-
-	// Enable when running E2E/integration tests before a release
-	version := "1.0.0"
-
 	// Publish the Pacts...
 	p := dsl.Publisher{}
 
 	fmt.Println("Publishing Pact files to broker", os.Getenv("PACT_DIR"), os.Getenv("PACT_BROKER_URL"))
 	err := p.Publish(types.PublishRequest{
-		PactURLs:        []string{filepath.FromSlash(fmt.Sprintf("%s/goadminservice-gouserservice.json", os.Getenv("PACT_DIR")))},
-		PactBroker:      fmt.Sprintf("%s://%s", os.Getenv("PACT_BROKER_PROTO"), os.Getenv("PACT_BROKER_URL")),
-		ConsumerVersion: version,
-		Tags:            []string{"master"},
+		PactURLs:        []string{filepath.FromSlash(fmt.Sprintf("%s/dineinconsumer-dineinprovider.json", os.Getenv("PACT_DIR")))},
+		PactBroker:      "https://test.pact.dius.com.au",
+		ConsumerVersion: "1.1.1",
+		Tags:            []string{"master", "prod"},
+
 		BrokerUsername:  os.Getenv("PACT_BROKER_USERNAME"),
 		BrokerPassword:  os.Getenv("PACT_BROKER_PASSWORD"),
 	})
