@@ -4,10 +4,9 @@ package client
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"testing"
-
-	"net/url"
 
 	"github.com/haibin/pact-workshop-go-consumer/model"
 	"github.com/pact-foundation/pact-go/dsl"
@@ -45,7 +44,7 @@ func TestMain(m *testing.M) {
 
 func TestClientPact_GetUser(t *testing.T) {
 	t.Run("the user exists", func(t *testing.T) {
-		id := 10
+		id := 11
 
 		pact.
 			AddInteraction().
@@ -53,13 +52,13 @@ func TestClientPact_GetUser(t *testing.T) {
 			UponReceiving("A request to login with user 'sally'").
 			WithRequest(dsl.Request{
 				Method: "GET",
-				Path:   dsl.Term("/user/10", "/user/[0-9]+"),
+				Path:   dsl.Term("/user/10", "/user/[0-8]+"),
 			}).
 			WillRespondWith(dsl.Response{
 				Status: 200,
 				Headers: dsl.MapMatcher{
 					"Content-Type":         dsl.Term("application/json; charset=utf-8", `application\/json`),
-					"X-Api-Correlation-Id": dsl.Like("100"),
+					"X-Api-Correlation-Id": dsl.Like("abc"),
 				},
 				Body: dsl.Match(model.User{}),
 			})
@@ -71,13 +70,17 @@ func TestClientPact_GetUser(t *testing.T) {
 			}
 
 			user, err := client.GetUser(id)
+			if err != nil {
+				return err
+			}
 
 			// Assert basic fact
+			// user.ID will be 11. (`json:"id" pact:"example=11"`)
 			if user.ID != id {
 				return fmt.Errorf("wanted user with ID %d but got %d", id, user.ID)
 			}
 
-			return err
+			return nil
 		}
 
 		if err := pact.Verify(test); err != nil {

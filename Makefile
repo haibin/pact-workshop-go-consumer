@@ -15,7 +15,7 @@ unit:
 
 consumer: install
 	@echo "--- 🔨Running Consumer Pact tests "
-	go test -tags=integration -count=1 github.com/haibin/pact-workshop-go-consumer/consumer/client -run 'TestClientPact'
+	go test -v -tags=integration -count=1 github.com/haibin/pact-workshop-go-consumer/consumer/client -run 'TestClientPact'
 
 publish: install
 	@echo "--- 📝 Publishing Pacts"

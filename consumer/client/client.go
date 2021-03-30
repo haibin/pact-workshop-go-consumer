@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -31,8 +32,9 @@ func (c *Client) GetUser(id int) (*model.User, error) {
 		return nil, ErrUnavailable
 	}
 
-	return &user, err
+	fmt.Printf("***** response user: %+v\n", user)
 
+	return &user, err
 }
 
 // GetUsers gets all users from the API
@@ -80,7 +82,17 @@ func (c *Client) do(req *http.Request, v interface{}) (*http.Response, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	err = json.NewDecoder(resp.Body).Decode(v)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("response: %s\n", body)
+	fmt.Printf("response header Content-Type: %s\n", resp.Header["Content-Type"])
+	fmt.Printf("response header X-Api-Correlation-Id: %s\n", resp.Header["X-Api-Correlation-Id"])
+
+	err = json.Unmarshal(body, &v)
+
 	return resp, err
 }
 
